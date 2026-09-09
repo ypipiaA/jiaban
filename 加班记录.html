@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f6f8">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>加班记录</title>
+<style>
+/* Capacitor 提供实际系统边距；浏览器和 iPhone 使用 env 回退，避免重复留白。 */
+:root{--safe-top:var(--safe-area-inset-top,env(safe-area-inset-top,0px));--safe-right:var(--safe-area-inset-right,env(safe-area-inset-right,0px));--safe-bottom:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px));--safe-left:var(--safe-area-inset-left,env(safe-area-inset-left,0px));--page-gutter:24px}
+:root{--bg:#f5f6f8;--card:#fff;--text:#202c3b;--muted:#707b8d;--line:#e9edf2;--pri:#285cde;--pri-soft:#edf2ff;--ot:#bc5b24;--ot-soft:#fff3e9;--comp:#168063;--comp-soft:#eaf7f1;--danger:#c43f48;--shadow:0 4px 24px #24395805}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;color-scheme:light}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:default}
+button:focus-visible,a:focus-visible{outline:3px solid #97b3ff;outline-offset:3px}button:active:not(:disabled){filter:brightness(.95)}
+main{max-width:720px;margin:auto;padding:28px 24px calc(108px + var(--safe-bottom));padding-top:calc(28px + var(--safe-top))}
+.app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px}.eyebrow{font-size:10px;font-weight:700;letter-spacing:2.3px;color:var(--muted)}h1{font-size:27px;letter-spacing:-1px;font-weight:750;line-height:1.5}.app-head p{font-size:12px;color:var(--muted);margin-top:3px}
+.status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:24px;padding:6px 10px;background:white;white-space:nowrap}.status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--comp)}.status.offline::before{background:var(--ot)}
+.view{display:none}.view.active{display:block;animation:appear .18s ease-out}@keyframes appear{from{opacity:.5;transform:translateY(3px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow)}.card h2{font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}.card h2 small{font-weight:400;color:var(--muted);font-size:12px}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.section-title h2{font-size:18px}.section-title p{font-size:12px;color:var(--muted);margin-top:3px}
+.month-nav{display:flex;align-items:center;gap:6px}.icon-btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--card);color:var(--text);width:38px;height:38px;border-radius:11px;font-size:22px;line-height:1;flex-shrink:0}.month-picker{position:relative;display:flex;align-items:center;justify-content:center;min-width:116px;height:38px;border-radius:10px}.month-picker b{font-size:16px;pointer-events:none}.month-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.month-picker:focus-within{outline:3px solid #97b3ff}.text-btn{border:0;background:var(--pri-soft);color:var(--pri);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;min-height:38px}.link-btn{border:0;background:transparent;color:var(--pri);font-size:12px;padding:4px 0}
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}.metric{padding:20px 18px;border-radius:18px;background:white;border:1px solid var(--line)}.metric.primary{background:#253d63;border-color:#253d63;color:#fff}.metric .l{font-size:12px;color:var(--muted)}.metric.primary .l,.metric.primary .detail{color:#c8d5e8}.metric .number{display:flex;align-items:baseline;gap:5px;margin:8px 0 5px}.metric .v{font-size:32px;line-height:1.2;font-weight:750;letter-spacing:-1px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.metric .unit{font-size:11px;color:var(--muted)}.metric.primary .unit{color:#c8d5e8}.metric.ot .v{color:var(--ot)}.metric.comp .v{color:var(--comp)}.metric .detail{font-size:11px;color:var(--muted)}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px}.mhead h2{font-size:15px}.legend{display:flex;gap:12px;color:var(--muted);font-size:10px}.legend span{display:flex;align-items:center;gap:4px}.dot{width:5px;height:5px;border-radius:50%;display:inline-block;background:var(--pri)}.dot.ot{background:var(--ot)}.dot.comp{background:var(--comp)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.cal .wd{text-align:center;font-size:11px;color:var(--muted);padding:0 0 8px}.cal .day{min-width:0;min-height:58px;aspect-ratio:1/1;border-radius:12px;background:#f8f9fb;font-size:14px;color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1.5px solid transparent;position:relative}.cal .day.blank{background:transparent}.cal .day.today{border-color:#b0c5ff}.cal .day.today::after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:var(--pri);top:5px;right:5px}.cal .day.wknd .n{color:#9099a8}.cal .day .n{font-weight:650}.cal .day .h{font-size:10px;line-height:1.15;color:var(--pri);min-height:12px}.cal .day .h.ot{color:var(--ot)}.cal .day .h.comp{color:var(--comp)}.cal .day.sel{background:var(--pri);border-color:var(--pri);box-shadow:0 3px 9px #285cde24}.cal .day.sel .n,.cal .day.sel .h{color:#fff}.cal .day.sel.today::after{background:#fff}
+.daycard .top{display:flex;justify-content:space-between;align-items:center;gap:8px}.daycard .top b{font-size:17px}.daycard .top small{font-size:12px;font-weight:400;color:var(--muted);margin-left:8px}.tag{display:inline-flex;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:600;white-space:nowrap}.tag.work{background:var(--pri-soft);color:var(--pri)}.tag.comp{background:var(--comp-soft);color:var(--comp)}.tag.ot{background:var(--ot-soft);color:var(--ot)}.daycard .info{color:var(--muted);font-size:13px;margin:14px 0 18px;overflow-wrap:anywhere}.daycard .info b{color:var(--text);font-size:19px;font-weight:650}.record-values{display:flex;gap:28px;margin-bottom:8px}.record-values span{display:block;font-size:11px;margin-bottom:3px}.empty-note{display:flex;align-items:center;gap:12px}.empty-icon{width:42px;height:42px;background:var(--bg);border-radius:13px;display:grid;place-items:center;color:#8997ab;font-size:23px;flex:none}
+.btn{display:block;width:100%;border:1px solid transparent;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;background:var(--pri);color:#fff;min-height:46px}.btn.sec{background:var(--pri-soft);color:var(--pri)}.btn.ghost{background:#f6f7fa;color:var(--text);border-color:var(--line);font-weight:500}.btn.danger{background:#fff0f1;color:var(--danger)}.btn.sm{width:auto;display:inline-block;padding:8px 13px;font-size:12px;min-height:38px}.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}.row .narrow{flex:0 0 auto}
+.hint{font-size:12px;color:var(--muted);line-height:1.7}.hide{display:none!important}.subheading{font-size:13px;font-weight:600;margin:18px 0 10px}.kv{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--line);font-size:13px}.kv:last-child{border-bottom:0}.kv span:first-child{color:var(--muted)}.kv b{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}.o{color:var(--ot)}.c{color:var(--comp)}.p{color:var(--pri)}
+.balance{display:flex;align-items:center;justify-content:space-between;padding:16px;margin:16px 0;background:var(--comp-soft);border-radius:13px;font-size:12px;color:var(--comp)}.balance b{font-size:25px;letter-spacing:-.5px}.list .it{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}.list .it:last-child{border-bottom:0}.list .it .event-info{min-width:0;overflow-wrap:anywhere}.list .it small{display:block;color:var(--muted);font-size:11px;margin-bottom:2px}.list .it b{white-space:nowrap;font-variant-numeric:tabular-nums}.list .it b.pos{color:var(--comp)}.del-adj{border:0;background:transparent;color:var(--danger);font-size:11px;padding:5px}.empty{text-align:center;padding:20px 10px;color:var(--muted);font-size:12px}
+.field{margin-bottom:16px}label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}.label-row{display:flex;align-items:center;justify-content:space-between}.label-row label{margin-bottom:7px}input{width:100%;font-size:16px;padding:11px 12px;border:1px solid #dfe5ed;border-radius:11px;background:#fafbfd;color:var(--text);outline:none;min-height:46px}input:focus{border-color:var(--pri);box-shadow:0 0 0 3px #285cde10;background:white}input[aria-invalid="true"]{border-color:var(--danger)}
+.setting-copy{margin:8px 0 18px}.backup-meta{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.danger-zone{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}.footnote{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
+.mask{position:fixed;inset:0;background:#16243b66;opacity:0;visibility:hidden;transition:opacity .2s;z-index:20;backdrop-filter:blur(3px)}.sheet{position:fixed;left:0;right:0;bottom:0;background:white;border-radius:24px 24px 0 0;padding:12px 24px calc(22px + var(--safe-bottom));transform:translateY(105%);visibility:hidden;transition:transform .22s,visibility .22s;z-index:21;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;max-width:560px;margin:auto}.open{overflow:hidden}.open .mask{opacity:1;visibility:visible}.open .sheet{transform:none;visibility:visible}.grab{width:32px;height:4px;background:#dfe4ec;border-radius:2px;margin:0 auto 17px}.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.sheet-head h3{font-size:20px}.sheet-head p{font-size:12px;color:var(--muted);margin-top:2px}.sheet-head .icon-btn{border:0;background:var(--bg)}
+.chips{display:flex;gap:4px;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:20px}.chips button{flex:1;border:0;background:transparent;border-radius:9px;padding:10px;font-size:14px;color:var(--muted)}.chips button.on{background:white;color:var(--pri);font-weight:650;box-shadow:0 2px 6px #2439580a}.presets{display:flex;gap:6px;margin:-6px 0 17px;flex-wrap:wrap}.presets button{border:1px solid var(--line);background:white;border-radius:8px;color:var(--muted);font-size:12px;padding:6px 12px;min-height:32px}.presets button.on{border-color:#bbccff;color:var(--pri);background:var(--pri-soft)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 15px;margin-bottom:17px;font-size:13px;background:#f8fafb;border-radius:12px}.switch small{display:block;font-size:11px;color:var(--muted);margin-top:2px}.tg{width:44px;height:26px;border:0;border-radius:15px;background:#cdd4df;position:relative;transition:.2s;flex:none}.tg::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px #0002}.tg.on{background:var(--comp)}.tg.on::after{left:21px}.form-error{color:var(--danger);background:#fff0f1;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:12px}.sheet-actions{display:flex;gap:10px;margin-top:8px}.sheet-actions .btn{flex:1}.sheet-actions .cancel{flex:0 0 85px}.sheet-delete{width:100%;border:0;background:transparent;color:var(--danger);padding:14px 8px 0;font-size:12px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);padding-bottom:var(--safe-bottom);z-index:5;backdrop-filter:blur(16px)}.nav-inner{display:flex;max-width:720px;margin:auto;padding:7px 24px 8px;gap:12px}nav button{flex:1;border:0;border-radius:12px;background:transparent;padding:8px 0;font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}nav button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}nav button.on{color:var(--pri);background:var(--pri-soft)}
+.toast{position:fixed;left:50%;bottom:calc(96px + var(--safe-bottom));transform:translate(-50%,8px);background:#24354a;color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:30;max-width:calc(100% - 32px);width:max-content;box-shadow:0 6px 24px #182a4326}.toast.show{opacity:1;transform:translate(-50%,0)}.data-warning{padding:14px;background:#fff3e8;color:#975126;border:1px solid #f3d7bc;border-radius:12px;margin-bottom:16px;font-size:12px}.data-warning button{margin-top:8px}.noscript{margin:24px;padding:20px}
+@media(min-width:760px){main{padding-top:44px}.app-head{margin-bottom:30px}.sheet{bottom:50%;transform:translateY(calc(50% + 35px));border-radius:24px;padding:24px;max-height:90dvh;opacity:0}.open .sheet{transform:translateY(50%);opacity:1}.grab{display:none}.nav-inner{padding-top:9px;padding-bottom:9px}nav button{flex-direction:row;gap:9px;font-size:13px;padding:12px}.cal .day{max-height:80px}}
+@media(max-width:420px){main{padding-left:16px;padding-right:16px;padding-top:calc(22px + var(--safe-top))}.card{padding:17px;border-radius:17px}.sum{gap:8px}.metric{padding:15px 11px;border-radius:15px}.metric .v{font-size:27px}.metric .detail{font-size:10px}.cal{gap:4px}.cal .day{min-height:47px;border-radius:10px;font-size:13px}.section-title h2{font-size:16px}.month-nav{gap:3px}.month-picker{min-width:109px}.text-btn{padding:8px 10px}.sheet{padding-left:20px;padding-right:20px}.nav-inner{padding-left:16px;padding-right:16px}.app-head{margin-bottom:20px}.legend{gap:8px}}
+.row .narrow{width:auto;white-space:nowrap}.month-picker{margin-bottom:0;color:var(--text)}.cal .day{width:100%}
+@media(min-width:900px){main,.nav-inner{max-width:960px}.calendar-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:start;gap:16px}.cal .day{max-height:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.table-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}.report-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:13px;text-align:left}.report-table th{background:#f7f9fc;color:var(--muted);font-weight:500;font-size:11px}.report-table th,.report-table td{padding:8px 10px;border-bottom:1px solid var(--line)}.report-table tbody tr:last-child td{border-bottom:0}.report-table .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.report-table tfoot{background:#f7f9fc;font-weight:600;font-size:12px}.report-table tfoot td{border-bottom:0}.daily-table th:first-child{width:35%}.date-link{border:0;background:transparent;color:var(--pri);font-size:13px;min-height:32px;padding:0;white-space:nowrap}.date-link small{font-size:10px;color:var(--muted);margin-left:5px}.note-mark{font-size:9px;margin-left:4px;color:var(--muted)}.report-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center;padding:18px 8px!important}.report-metrics>div+div{border-left:1px solid var(--line)}.report-metrics span{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.report-metrics b{font-size:23px;font-weight:700;letter-spacing:-.5px;white-space:nowrap}.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}.pagination span{font-size:11px;color:var(--muted)}.pagination .text-btn{padding:5px 12px;min-height:32px}.report-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:10px;color:var(--muted)}.compact-details summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;font-weight:600;min-height:30px}.compact-details summary::-webkit-details-marker{display:none}.compact-details summary::after{content:'＋';color:var(--muted);font-size:16px;font-weight:400;flex:none}.compact-details[open]>summary::after{content:'−'}.compact-details summary>span:first-child{flex:1}.compact-details summary b{margin-left:12px;font-variant-numeric:tabular-nums}.summary-more{color:var(--muted);font-size:11px;font-weight:400}.details-body{padding-top:16px}.inset-details{margin:12px 0}.inset-details>summary{font-size:12px;font-weight:400;color:var(--muted);min-height:36px}.inset-details[open]>summary{color:var(--pri)}.inset-details .details-body{padding-top:8px}.ledger-table th:first-child{width:60%}.ledger-table th:last-child{width:50px}.ledger-table .event-note{overflow-wrap:anywhere;font-size:12px}.event-note small{display:block;color:var(--muted);font-size:10px}.sync-line{font-size:12px;color:var(--muted);margin:10px 0 14px}.sync-line.error{color:var(--ot)}.sync-actions{display:flex;gap:8px;flex-wrap:wrap}.sync-actions .btn{flex:1;min-width:110px}.sync-code{font-family:ui-monospace,monospace;font-size:13px;user-select:all}.sync-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.conflict-item{border:1px solid #f1cfb9;border-radius:12px;padding:12px;margin:12px 0}.conflict-item h3{font-size:13px;margin-bottom:8px}.conflict-option{display:flex;gap:8px;padding:8px;background:var(--bg);border-radius:8px;margin-top:6px;align-items:flex-start;color:var(--text);overflow-wrap:anywhere}.conflict-option input{width:18px;min-height:18px;height:18px;padding:0;appearance:auto;flex:none;margin-top:3px}.conflict-option small{display:block;color:var(--muted)}.sync-history{margin-top:12px;max-height:320px;overflow-y:auto;overscroll-behavior:contain}.sync-history-toggle::after{content:"";display:inline-block;width:6px;height:6px;margin-left:8px;vertical-align:3px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg)}.sync-history-toggle[aria-expanded="true"]{background:var(--pri-soft);border-color:#bbccff;color:var(--pri)}.sync-history-toggle[aria-expanded="true"]::after{transform:rotate(225deg);vertical-align:0}.sync-history .kv{align-items:center;font-size:12px}.sync-history .kv span{overflow-wrap:anywhere}.sync-security{margin-top:10px;font-size:11px;color:var(--muted)}
+/* 常用界面控制长度，次要内容按需展开。 */
+main{padding-top:calc(18px + var(--safe-top));padding-bottom:calc(84px + var(--safe-bottom))}.app-head{margin-bottom:18px}h1{font-size:23px}.app-head p{font-size:11px}.card{padding:16px;margin-bottom:12px;border-radius:16px}.section-title{margin-bottom:12px}.metric{padding:13px 12px}.metric .v{font-size:27px}.metric .number{margin:5px 0}.metric .detail{font-size:10px}.cal{gap:4px}.cal .day{aspect-ratio:auto;min-height:44px;height:44px;gap:2px}.cal .wd{padding-bottom:4px}.mhead{margin-bottom:10px}.sum{margin-bottom:12px}.sheet{max-width:460px;padding-left:20px;padding-right:20px}.sheet-head{margin-bottom:14px}.sheet-head h3{font-size:18px}.sheet-head p{font-size:11px}.chips{margin-bottom:16px}.hours-field{margin-bottom:12px}.hours-entry{display:flex;align-items:center;border:1px solid var(--line);background:#fafbfd;border-radius:12px;padding-right:16px}.hours-entry input{border:0;background:transparent;box-shadow:none;font-size:32px;font-weight:650;min-width:0;height:62px;padding:8px 16px}.hours-entry:focus-within{border-color:var(--pri)}.hours-entry>span{font-size:12px;color:var(--muted);white-space:nowrap}.presets{margin:0 0 12px;gap:8px}.presets button{flex:1;padding:8px 6px;min-height:36px}.auto-result{font-size:12px;color:var(--muted);margin-bottom:10px}.switch{padding:10px 0;background:transparent;margin-bottom:0}.sheet-actions{margin-top:14px}.sheet .field:last-child{margin-bottom:0}.compact-details:focus-within{scroll-margin-bottom:90px}summary:focus-visible{outline:3px solid #97b3ff;outline-offset:4px;border-radius:6px}button,input,summary{scroll-margin-bottom:90px}
+@media(min-width:900px){main,.nav-inner{max-width:840px}.cal .day{height:49px}.calendar-layout{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}.sheet{padding:22px}.report-metrics b{font-size:26px}}
+@media(max-width:420px){main{padding-left:14px;padding-right:14px}.card{padding:14px}.report-table th,.report-table td{padding:6px 8px}.report-metrics b{font-size:21px}.report-metrics{padding:14px 4px!important}.date-link{font-size:12px}.metric .v{font-size:24px}.sheet{padding-left:18px;padding-right:18px}.app-head{margin-bottom:14px}.sheet .grab{margin-bottom:12px}}
+.report-metrics b small{font-size:11px;font-weight:400;letter-spacing:0}
+@media(min-width:760px){.daily-table th,.daily-table td{padding:4px 8px}.report-metrics{padding:14px 8px!important}.report-records{padding:14px}}
+.metric.work .v{color:var(--pri)}
+html,body{touch-action:pan-x pan-y}
+.day-entry{margin-top:16px}.day-entry .field{margin-bottom:10px}.day-entry input{font-size:20px;font-weight:600;padding:8px 10px}.day-entry .switch{padding:4px 0 10px}.day-entry .entry-total{font-size:12px;color:var(--muted);margin-bottom:12px}.day-entry .entry-total b{font-size:16px;color:var(--text)}.day-entry .note-preview{font-size:12px;color:var(--muted);overflow-wrap:anywhere;margin:10px 0}.day-entry .row .btn{font-size:13px}.day-entry .tg{border:0}
+.full-report{overflow:auto;touch-action:pan-x pan-y;max-height:390px}.daily-table{min-width:560px}.daily-table.has-notes{min-width:648px}.daily-table .note-column{width:72px}.daily-table.has-notes .note-column{width:160px}.daily-table th:first-child{width:auto}.daily-table th,.daily-table td{padding:6px 8px}.daily-table .report-note{overflow-wrap:anywhere;white-space:pre-wrap;vertical-align:top}.daily-table .report-date{white-space:nowrap;position:sticky;left:0;background:white;z-index:1}.daily-table thead th{position:sticky;top:0;z-index:2}.daily-table thead th:first-child{left:0;z-index:3}.daily-table tfoot td:first-child{position:sticky;left:0;background:#f7f9fc}.daily-table .date-link{min-height:32px}.mobile-table-hint{display:none}
+@media(min-width:760px){.daily-table th,.daily-table td{padding:4px 8px}}
+@media(min-width:900px){main:has(#v-rep.active){max-width:1120px}}
+@media(max-width:899px){.mobile-table-hint{display:inline}}
+@media(max-width:899px){main{padding-top:calc(12px + var(--safe-top))}.app-head{margin-bottom:12px}#v-cal .metric{padding:10px 11px}#v-cal .metric .number{margin:3px 0}#v-cal .sum{margin-bottom:10px}#v-cal .card{padding:12px}#v-cal .mhead{margin-bottom:6px}#v-cal .cal{gap:3px}.day-entry{margin-top:10px}.day-entry .field{margin-bottom:8px}.day-entry .entry-total{margin-bottom:8px}}
+/* 系统栏、刘海和横屏边距独立处理，滚动内容也不穿过顶部状态栏。 */
+body::before{content:"";position:fixed;inset:0 0 auto;height:var(--safe-top);background:var(--bg);z-index:25;pointer-events:none}
+main{padding-left:calc(var(--page-gutter) + var(--safe-left));padding-right:calc(var(--page-gutter) + var(--safe-right))}
+.app-head>div{min-width:0}.app-head h1{line-height:1.3;white-space:nowrap}.app-head p{margin-top:4px}.app-head .status{flex-shrink:0}
+nav{padding-left:var(--safe-left);padding-right:var(--safe-right)}.nav-inner{padding-left:var(--page-gutter);padding-right:var(--page-gutter)}
+.sheet{left:var(--safe-left);right:var(--safe-right);max-height:min(92dvh,calc(100dvh - var(--safe-top) - 12px));scroll-padding-block:16px calc(22px + var(--safe-bottom))}
+.toast{max-width:calc(100% - 32px - var(--safe-left) - var(--safe-right));left:calc(50% + (var(--safe-left) - var(--safe-right))/2)}
+button,input,summary,.compact-details:focus-within{scroll-margin-top:calc(12px + var(--safe-top));scroll-margin-bottom:calc(90px + var(--safe-bottom))}
+@media(max-width:420px){:root{--page-gutter:14px}}
+@media(max-width:759px){.nav-inner{padding-top:6px;padding-bottom:6px}nav button{min-height:48px;padding:5px 0;gap:2px}nav button svg{width:20px;height:20px}}
+@media(min-width:760px){.sheet{bottom:calc(50% + (var(--safe-bottom) - var(--safe-top))/2);max-height:min(90dvh,calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px))}}
+@media(max-width:899px){.app-head{margin-bottom:8px}.section-title{margin-bottom:10px}#v-cal .metric{padding-block:8px}#v-cal .metric .number{margin:2px 0}#v-cal .sum{margin-bottom:8px}#v-cal .card{margin-bottom:10px}#v-cal .mhead{margin-bottom:4px}.day-entry input{line-height:1.4}.day-entry .entry-total{margin-bottom:6px}}
+#syncCard .sync-line{margin:0 0 14px}
+#appVersion{font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<noscript><p class="noscript">请启用浏览器 JavaScript 后使用加班记录。</p></noscript>
+<main id="main">
+  <header class="app-head"><div><h1>加班记录</h1><p id="todayLabel"></p></div><span class="status" id="netStatus">本机保存</span></header>
+  <div id="dataWarning" class="data-warning hide" role="alert"><p id="dataWarningText"></p><button class="btn sm ghost" id="btnRawExport">导出原始数据</button></div>
+  <section class="view active" id="v-cal" aria-label="记录">
+    <div class="section-title"><div class="month-nav"><button class="icon-btn" id="calPrev" aria-label="上个月">‹</button><label class="month-picker"><b id="calTitle"></b><input type="month" id="calMonth" min="1900-01" max="9999-12" aria-label="选择记录月份"></label><button class="icon-btn" id="calNext" aria-label="下个月">›</button></div><button class="text-btn" id="calToday">回到今天</button></div>
+    <div class="sum">
+      <div class="metric work"><div class="l">本月总工时</div><div class="number"><span class="v" id="mHours">0</span><span class="unit">小时</span></div><div class="detail" id="mDays">已出勤 0 天</div></div>
+      <div class="metric ot"><div class="l">加班累计</div><div class="number"><span class="v" id="mOT">0</span><span class="unit">小时</span></div><div class="detail" id="mOTComp">换调休 0 小时</div></div>
+      <div class="metric comp"><div class="l">调休余额</div><div class="number"><span class="v" id="mComp">0</span><span class="unit">小时</span></div><div class="detail" id="mCompDays">约 0 天可用</div></div>
+    </div>
+    <div class="calendar-layout"><div class="card"><div class="mhead"><h2>出勤日历</h2><div class="legend"><span><i class="dot"></i>上班</span><span><i class="dot ot"></i>加班</span><span><i class="dot comp"></i>调休</span></div></div><div class="cal" id="calGrid" aria-label="选择日期"></div></div>
+    <div class="card daycard" id="dayCard" aria-live="polite"></div>
+    </div>
+  </section>
+  <section class="view" id="v-rep" aria-label="月报">
+    <div class="section-title"><div class="month-nav"><button class="icon-btn" id="rPrev" aria-label="月报上个月">‹</button><label class="month-picker"><b id="rTitle"></b><input type="month" id="rMonth" min="1900-01" max="9999-12" aria-label="选择月报月份"></label><button class="icon-btn" id="rNext" aria-label="月报下个月">›</button></div><button class="text-btn" id="rToday">回到本月</button></div>
+    <div class="report-metrics card" aria-label="本月概览">
+      <div><span>总工时</span><b id="rHours" class="p"></b></div><div><span>加班</span><b id="rOT" class="o"></b></div><div><span>出勤</span><b id="rDays"></b></div>
+    </div>
+    <div class="card report-records"><h2>本月记录 <small id="rSummary"></small></h2>
+      <div class="table-wrap full-report" tabindex="0" aria-label="完整月报，窄屏可左右滑动"><table class="report-table daily-table"><colgroup><col style="width:100px"><col style="width:44px"><col style="width:48px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:64px"><col style="width:64px"><col class="note-column"></colgroup><thead><tr><th scope="col">日期</th><th scope="col">星期</th><th scope="col">类型</th><th scope="col" class="num">上班</th><th scope="col" class="num">加班</th><th scope="col" class="num">合计</th><th scope="col" class="num">换调休</th><th scope="col" class="num">用调休</th><th scope="col">备注</th></tr></thead><tbody id="rRows"></tbody><tfoot id="rTotals"></tfoot></table></div>
+      <div class="pagination hide" id="rPager"><button class="text-btn" id="rPagePrev" aria-label="记录上一页">上一页</button><span id="rPageLabel" aria-live="polite"></span><button class="text-btn" id="rPageNext" aria-label="记录下一页">下一页</button></div>
+      <div class="report-bottom"><span>单位：小时 · 点日期修改<span class="mobile-table-hint"> · 左右滑动查看全栏</span></span><button class="link-btn" id="rExport">导出整月</button></div>
+    </div>
+    <details class="card compact-details" id="balanceDetails"><summary><span>调休余额 <b id="cBal" class="c"></b></span><span class="summary-more">明细</span></summary><div class="details-body">
+      <p class="hint" id="cBalDay"></p><div class="kv"><span>本月换调休</span><b id="rOTComp"></b></div><div class="kv"><span>本月用调休</span><b id="rCompDays"></b></div><div class="kv"><span>日均工时</span><b id="rAvg"></b></div>
+      <div class="report-bottom"><span>全部调休流水</span><button class="link-btn" id="btnAdj">调整余额</button></div>
+      <div class="table-wrap"><table class="report-table ledger-table"><thead><tr><th scope="col">日期 / 说明</th><th scope="col" class="num">变动</th><th scope="col">操作</th></tr></thead><tbody id="cList"></tbody></table></div>
+      <div class="pagination hide" id="cPager"><button class="text-btn" id="cPagePrev">上一页</button><span id="cPageLabel" aria-live="polite"></span><button class="text-btn" id="cPageNext">下一页</button></div>
+    </div></details>
+  </section>
+  <section class="view" id="v-set" aria-label="设置">
+    <details class="card compact-details" id="syncCard"><summary><span>多设备同步</span><span class="summary-more" id="syncSummary" role="status">未连接</span></summary><div class="details-body"><div class="sync-line" id="syncStatus" role="status">尚未连接同步空间</div>
+      <div id="syncSetup"><button class="btn" id="syncCreate">开启同步</button><details class="compact-details inset-details" id="syncJoinDetails"><summary>已有同步码？连接另一台设备</summary><div class="details-body"><label for="syncJoinCode">粘贴另一台设备的同步码</label><input class="sync-code" id="syncJoinCode" type="password" autocomplete="off" spellcheck="false" placeholder="jb1_…"><button class="btn sec" id="syncJoin" style="margin-top:10px">连接</button></div></details></div>
+      <div id="syncConnected" class="hide"><div class="sync-actions"><button class="btn" id="syncNow">立即同步</button><button class="btn ghost" id="syncCopy">连接另一台设备</button></div><p class="hint" style="margin-top:10px">复制同步码，在另一台设备的同一网站中粘贴。</p><details class="compact-details inset-details" id="syncAdvanced"><summary>同步码与恢复</summary><div class="details-body"><button class="link-btn" id="syncReveal">显示同步码</button><input class="sync-code hide" type="text" readonly id="syncCode" aria-label="当前同步码"><p class="sync-security">请私下保存同步码，用于连接设备或找回云端记录。</p><div class="sync-section"><div class="sync-actions"><button class="btn sm ghost sync-history-toggle" id="syncHistory" aria-controls="syncHistoryList" aria-expanded="false">云端历史</button><button class="btn sm ghost sync-history-toggle" id="syncRecovery" aria-controls="syncHistoryList" aria-expanded="false">本机恢复副本</button></div><div id="syncHistoryList" class="sync-history hide" role="region" aria-label="备份记录" aria-live="polite" aria-busy="false"></div><button class="link-btn" id="syncDisconnect" style="color:var(--danger);margin-top:12px">断开此设备</button></div></div></details></div>
+      <div id="syncConflicts" class="hide sync-section"><h2>请选择要保留的记录</h2><p class="hint">两台设备修改了同一项，旧版本会保留。</p><div id="syncConflictRows"></div><button class="btn" id="syncResolve">确认并同步</button></div>
+    </div></details>
+    <details class="card compact-details" id="rulesSettings"><summary><span>工时设置</span><span id="rulesLabel" class="summary-more"></span></summary><div class="details-body"><div class="row"><div class="field"><label for="sDaily">标准工时 · 小时 / 天</label><input type="number" inputmode="decimal" min="0.01" max="24" step="any" id="sDaily"></div><div class="field"><label for="sComp0">初始调休 · 小时</label><input type="number" inputmode="decimal" step="any" id="sComp0"></div></div><p class="hint setting-copy">上班与加班分别填写、分别统计。标准工时只用于默认填入和调休天数换算。</p><div id="setError" class="form-error hide" role="alert"></div><button class="btn" id="btnSaveSet">保存设置</button></div></details>
+    <details class="card compact-details" id="backupSettings"><summary><span>备份与恢复</span><span class="summary-more" id="backupCount"></span></summary><div class="details-body"><p class="hint setting-copy">可导出到本机另存，或导入已有备份。</p><div class="row"><button class="btn sec" id="btnExport">导出备份</button><button class="btn ghost" id="btnImport">导入备份</button></div><input type="file" id="fileImport" accept=".json,application/json" class="hide" aria-label="选择备份文件"><div class="backup-meta" id="backupMeta"></div><div class="danger-zone"><button class="btn danger" id="btnClear">清空本机数据</button></div></div></details>
+    <p class="footnote" id="appVersion">当前版本 <span id="appVersionLabel">v1.3.1</span></p>
+  </section>
+</main>
+<div class="mask" id="mask"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle" aria-hidden="true" inert>
+  <div class="grab"></div><div class="sheet-head"><div><h3 id="shTitle"></h3><p id="shSub"></p></div><button class="icon-btn" id="btnClose" aria-label="关闭记录面板">×</button></div>
+  <div class="chips" id="fType" aria-label="记录类型"><button data-v="work" aria-pressed="true">上班</button><button data-v="comp" aria-pressed="false">调休</button></div>
+  <div id="boxWork"><div class="row"><div class="field"><label for="fHours">上班 · 小时</label><input type="number" inputmode="decimal" min="0" max="24" step="any" id="fHours"></div><div class="field"><label for="fOT">加班 · 小时</label><input type="number" inputmode="decimal" min="0" max="24" step="any" id="fOT"></div></div><div class="presets" id="hourPresets" aria-label="快捷上班时数"></div><p class="auto-result" id="workTotal"></p><div class="switch" id="compSwitchRow"><span>加班换调休</span><button class="tg" id="fComp" role="switch" aria-checked="false" aria-label="加班换调休"></button></div></div>
+  <div id="boxComp" class="hide"><div class="field hours-field"><label for="fCompH">调休几小时？</label><div class="hours-entry"><input type="number" inputmode="decimal" min="0.01" max="24" step="any" id="fCompH"><span>小时</span></div></div><div class="presets" id="compPresets" aria-label="快捷调休"></div><p class="hint" id="compHint" style="margin-bottom:12px"></p></div>
+  <details class="compact-details inset-details" id="fMore"><summary>备注</summary><div class="details-body"><div class="field"><label for="fNote">备注</label><input type="text" id="fNote" placeholder="选填"></div></div></details>
+  <div class="form-error hide" id="formError" role="alert"></div><div class="sheet-actions"><button class="btn ghost cancel" id="btnCancel">取消</button><button class="btn" id="btnSave">保存</button></div><button class="sheet-delete hide" id="btnDel">删除记录</button>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<nav id="nav" aria-label="主导航"><div class="nav-inner">
+  <button data-view="cal" class="on" aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4m-8 8h2m4 0h2"/></svg>记录</button>
+  <button data-view="rep"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 20V10m7 10V4m7 16v-7M3 20h18"/></svg>月报</button>
+  <button data-view="set"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor" stroke="none"/><circle cx="16" cy="17" r="3" fill="currentColor" stroke="none"/></svg>设置</button>
+</div></nav>
+<script src="sync-core.js"></script>
+<script>
+'use strict';
+// 限制页面内的缩放操作；保持普通滚动、输入和表格横向滚动。
+document.addEventListener('wheel', e => { if (e.ctrlKey || e.metaKey || (e.target.matches?.('input[type="number"]') && e.target === document.activeElement)) e.preventDefault(); }, { passive: false });
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (['+', '=', '-', '_', '0'].includes(e.key) || ['NumpadAdd', 'NumpadSubtract', 'Numpad0'].includes(e.code))) e.preventDefault(); });
+for (const type of ['gesturestart', 'gesturechange']) document.addEventListener(type, e => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+/* public/index.html 由 sync_public.py 同步生成。 */
+const LS = 'jiaban.v1';
+const DEF = { daily: 8, comp0: 0 };
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => ymd(new Date());
+const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const WD = ['日', '一', '二', '三', '四', '五', '六'];
+const round = n => Math.round((n + Number.EPSILON) * 100) / 100;
+const f1 = n => String(round(n));
+const isWknd = ds => [0, 6].includes(parseD(ds).getDay());
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const emptyData = () => ({ settings: { ...DEF }, records: {}, adjust: [] });
+const isObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && +s.slice(0, 4) >= 1900 && ymd(parseD(s)) === s;
+function number(v, name, min = -1000000, max = 1000000) {
+  if (!['number', 'string'].includes(typeof v) || String(v).trim() === '' || !Number.isFinite(Number(v)) || Number(v) < min || Number(v) > max) throw new Error(`${name}需在 ${min}～${max} 之间`);
+  return Number(v);
+}
+/* 只接受已知字段，同时兼容旧版上下班时间记录；校验完成后才能替换数据。 */
+function normalizeData(d) {
+  if (!isObject(d) || !isObject(d.records) || (d.settings != null && !isObject(d.settings)) || (d.adjust != null && !Array.isArray(d.adjust))) throw new Error('备份结构不正确');
+  const out = emptyData();
+  out.settings.daily = number(d.settings?.daily ?? 8, '标准工时', 0.01, 24);
+  out.settings.comp0 = number(d.settings?.comp0 ?? 0, '初始余额');
+  for (const [date, original] of Object.entries(d.records)) {
+    if (!validDate(date) || !isObject(original)) throw new Error('记录日期或内容不正确');
+    const r = { ...original };
+    if (r.type === 'leave') continue;
+    if (r.type === 'rest') r.type = 'work';
+    if (r.note != null && typeof r.note !== 'string') throw new Error('备注必须为文字');
+    const note = r.note || '';
+    if (r.type === 'work') {
+      if (r.hours == null) {
+        let h = 0;
+        if (r.start || r.end) {
+          const times = [r.start, r.end].map(t => {
+            if (typeof t !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(t)) throw new Error('旧版上下班时间不正确');
+            const [x, y] = t.split(':').map(Number); return x * 60 + y;
+          });
+          h = Math.max(0, ((times[1] <= times[0] ? times[1] + 1440 : times[1]) - times[0] - number(r.brk ?? 0, '休息分钟', 0, 1440)) / 60);
+        }
+        r.hours = h;
+      }
+      const hours = number(r.hours, '工时', 0, 24), ot = number(r.ot ?? 0, '加班时数', 0, hours);
+      out.records[date] = { type: 'work', hours, ot, otMode: r.otMode === 'comp' ? 'comp' : 'pay', note };
+    } else if (r.type === 'comp') {
+      out.records[date] = { type: 'comp', compHours: number(r.compHours ?? 0, '调休时数', 0, 24), note };
+    } else throw new Error('记录类型不正确');
+  }
+  out.adjust = (d.adjust || []).map((a, index) => {
+    if (!isObject(a) || !validDate(a.d) || (a.note != null && typeof a.note !== 'string')) throw new Error('调休调整记录不正确');
+    // ID 只用于内部定位，避免导入内容进入可执行 HTML。
+    const id = SyncCore.validId(String(a.id)) ? String(a.id) : `legacy-${index + 1}`;
+    return { id, d: a.d, h: number(a.h, '调整时数'), note: a.note || '' };
+  });
+  const seen = new Set(); for (const a of out.adjust) { if (seen.has(a.id)) throw new Error('余额调整编号重复'); seen.add(a.id); }
+  return out;
+}
+let dataIssue = '', rawData = null, loadFailed = false, cachedStats = null;
+function load() {
+  try { rawData = localStorage.getItem(LS); return rawData === null ? emptyData() : normalizeData(JSON.parse(rawData)); }
+  catch { loadFailed = true; dataIssue = rawData === null ? '浏览器无法读取本机存储，暂时不能保存。请检查浏览器设置后刷新。' : '本机数据无法读取，原始内容已保留。请先导出原始数据，再到设置导入有效备份或清空数据。'; return emptyData(); }
+}
+let S = load();
+let toastT;
+function toast(message) { $('toast').textContent = message; $('toast').classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('show'), 2800); }
+function renderWarning() { $('dataWarning').classList.toggle('hide', !dataIssue); $('dataWarningText').textContent = dataIssue; $('btnRawExport').classList.toggle('hide', rawData === null); }
+function commit(next, replace = false) {
+  if (loadFailed && !replace) { toast('请先处理上方的数据提示'); return false; }
+  try {
+    const serialized = JSON.stringify(next);
+    // 页面同时打开时，阻止旧页面覆盖其他窗口刚保存的数据。
+    if (localStorage.getItem(LS) !== rawData) { toast('数据已在其他页面变化，请刷新后重试'); return false; }
+    localStorage.setItem(LS, serialized);
+    S = next; rawData = serialized; cachedStats = null; loadFailed = false; dataIssue = ''; renderWarning(); window.dispatchEvent(new Event('jiaban-change')); return true;
+  } catch { toast('保存失败：请检查存储空间或浏览器设置'); return false; }
+}
+function updateData(change) { const next = { settings: { ...S.settings }, records: { ...S.records }, adjust: S.adjust.map(a => ({ ...a })) }; change(next); return commit(next); }
+// 存储仍保留旧格式：hours 为总工时，ot 为其中的加班，避免旧备份和旧设备重复累加。
+const regularHours = r => r?.type === 'work' ? round(r.hours - r.ot) : 0;
+function statistics() {
+  if (cachedStats) return cachedStats;
+  const months = new Map(), ev = []; let bal = S.settings.comp0;
+  for (const [d, r] of Object.entries(S.records)) {
+    const ym = d.slice(0, 7), st = months.get(ym) || { days: 0, hours: 0, ot: 0, otComp: 0, compDays: 0, compUse: 0 };
+    months.set(ym, st);
+    if (r.type === 'comp') { if (r.compHours > 0) st.compDays++; st.compUse += r.compHours; bal -= r.compHours; if (r.compHours) ev.push({ d, h: -r.compHours, t: '使用调休' }); }
+    else { if (r.hours > 0) st.days++; st.hours += r.hours; st.ot += r.ot; if (r.otMode === 'comp') { st.otComp += r.ot; bal += r.ot; if (r.ot) ev.push({ d, h: r.ot, t: '加班换调休' }); } }
+  }
+  for (const a of S.adjust) { bal += a.h; ev.push({ d: a.d, h: a.h, t: a.note || '手动调整', id: a.id }); }
+  ev.sort((a, b) => b.d.localeCompare(a.d) || String(b.id || '').localeCompare(String(a.id || '')));
+  return cachedStats = { months, bal: round(bal), ev };
+}
+const monthStats = ym => statistics().months.get(ym) || { days: 0, hours: 0, ot: 0, otComp: 0, compDays: 0, compUse: 0 };
+const compSummary = () => statistics();
+let sel = today(), cy = parseD(sel).getFullYear(), cm = parseD(sel).getMonth(), ry = cy, rm = cm, view = 'cal';
+const PAGE_SIZE = 5;
+let reportPage = 0, eventPage = 0, reportMonth = '';
+function setMonth(y, m, report = false) {
+  const d = new Date(y, m, 1); if (d.getFullYear() < 1900 || d.getFullYear() > 9999) return;
+  if (!report && !allowDayLeave()) { $('calMonth').value = `${cy}-${pad(cm + 1)}`; return; }
+  if (report) { ry = d.getFullYear(); rm = d.getMonth(); renderRep(); }
+  else { cy = d.getFullYear(); cm = d.getMonth(); const ym = `${cy}-${pad(cm + 1)}`; sel = today().startsWith(ym) ? today() : `${ym}-${pad(Math.min(parseD(sel).getDate(), new Date(cy, cm + 1, 0).getDate()))}`; renderCal(); }
+}
+$('calPrev').onclick = () => setMonth(cy, cm - 1); $('calNext').onclick = () => setMonth(cy, cm + 1);
+$('rPrev').onclick = () => setMonth(ry, rm - 1, true); $('rNext').onclick = () => setMonth(ry, rm + 1, true);
+for (const [id, report] of [['calMonth', false], ['rMonth', true]]) $(id).onchange = e => { if (!/^\d{4}-\d{2}$/.test(e.target.value)) return; const [y, m] = e.target.value.split('-').map(Number); if (m >= 1 && m <= 12) setMonth(y, m - 1, report); };
+$('calToday').onclick = () => { const d = new Date(); setMonth(d.getFullYear(), d.getMonth()); };
+$('rToday').onclick = () => setMonth(new Date().getFullYear(), new Date().getMonth(), true);
+function renderCal() {
+  const ym = `${cy}-${pad(cm + 1)}`, st = monthStats(ym), c = compSummary(), now = today();
+  $('calTitle').textContent = `${cy}年${cm + 1}月`; $('calMonth').value = ym;
+  $('mHours').textContent = f1(st.hours); $('mOT').textContent = f1(st.ot); $('mComp').textContent = f1(c.bal);
+  $('mDays').textContent = `已出勤 ${st.days} 天`; $('mOTComp').textContent = `换调休 ${f1(st.otComp)} 小时`; $('mCompDays').textContent = c.bal >= 0 ? `约 ${f1(c.bal / S.settings.daily)} 天可用` : `已超用 ${f1(-c.bal / S.settings.daily)} 天`;
+  const off = (new Date(cy, cm, 1).getDay() + 6) % 7, n = new Date(cy, cm + 1, 0).getDate();
+  let html = ['一', '二', '三', '四', '五', '六', '日'].map(w => `<div class="wd" aria-hidden="true">${w}</div>`).join('');
+  html += '<div class="day blank" aria-hidden="true"></div>'.repeat(off);
+  for (let d = 1; d <= n; d++) {
+    const ds = `${ym}-${pad(d)}`, r = S.records[ds], weekend = isWknd(ds);
+    const sub = !r ? '' : r.type === 'comp' ? '调休' : `${f1(r.hours)}h`, cls = r?.type === 'comp' ? 'comp' : r?.ot ? 'ot' : '';
+    const label = `${ds} 周${WD[parseD(ds).getDay()]}，${!r ? '未记录' : r.type === 'comp' ? `调休 ${f1(r.compHours)} 小时` : `工时 ${f1(r.hours)} 小时，加班 ${f1(r.ot)} 小时`}`;
+    html += `<button class="day ${ds === now ? 'today' : ''} ${ds === sel ? 'sel' : ''} ${weekend ? 'wknd' : ''}" data-ds="${ds}" aria-label="${label}" aria-pressed="${ds === sel}" ${ds === now ? 'aria-current="date"' : ''}><span class="n">${d}</span><span class="h ${cls}">${sub}</span></button>`;
+  }
+  $('calGrid').innerHTML = html; renderDayCard();
+}
+$('calGrid').onclick = e => {
+  const button = e.target.closest('[data-ds]'); if (!button) return;
+  if (button.dataset.ds === sel || !allowDayLeave()) return;
+  const old = $('calGrid').querySelector('.sel'); if (old) { old.classList.remove('sel'); old.setAttribute('aria-pressed', 'false'); }
+  sel = button.dataset.ds; button.classList.add('sel'); button.setAttribute('aria-pressed', 'true'); renderDayCard();
+};
+function renderDayCard() {
+  const ds = sel, r = S.records[ds], d = parseD(ds);
+  let html = `<div class="top"><b>${d.getMonth() + 1}月${d.getDate()}日<small>周${WD[d.getDay()]}${ds === today() ? ' · 今天' : ''}</small></b><span class="tag ${r?.type || 'work'}">${r ? r.type === 'comp' ? '调休' : r.ot ? '上班 · 有加班' : '上班' : '待记录'}</span></div>`;
+  if (r?.type === 'comp') {
+    html += `<div class="info">使用调休 <b>${f1(r.compHours)}</b> 小时${r.note ? `<br>备注：${esc(r.note)}` : ''}</div><button class="btn sec" data-action="edit">修改记录</button>`;
+  } else {
+    const hours = r ? regularHours(r) : S.settings.daily, ot = r?.ot || 0, comp = r?.otMode === 'comp';
+    html += `<form class="day-entry" id="dayEntry" novalidate><div class="row"><div class="field"><label for="dHours">上班 · 小时</label><input id="dHours" type="number" inputmode="decimal" min="0" max="24" step="any" value="${hours}"></div><div class="field"><label for="dOT">加班 · 小时</label><input id="dOT" type="number" inputmode="decimal" min="0" max="24" step="any" value="${ot}"></div></div><div class="entry-total" id="dTotal"></div><div class="switch ${ot || comp ? '' : 'hide'}" id="dCompRow"><span>加班换调休</span><button type="button" class="tg ${comp ? 'on' : ''}" id="dComp" role="switch" aria-checked="${comp}" aria-label="此日加班换调休"></button></div>${r?.note ? `<div class="note-preview">备注：${esc(r.note)}</div>` : ''}<div class="form-error hide" id="dayError" role="alert"></div><div class="row"><button class="btn" type="submit" id="btnDaySave">保存</button><button class="btn ghost" type="button" data-action="edit">调休 / 备注</button></div></form>`;
+  }
+  $('dayCard').innerHTML = html;
+  updateDayTotal(); dayInitial = daySnapshot(); updateDayState();
+}
+let dayInitial = '';
+function daySnapshot() { return $('dayEntry') ? JSON.stringify([$('dHours').value, $('dOT').value, $('dComp').getAttribute('aria-checked')]) : ''; }
+function inlineDirty() { return view === 'cal' && !!$('dayEntry') && daySnapshot() !== dayInitial; }
+function allowDayLeave() { return !inlineDirty() || confirm('这一天的填写还未保存，确定放弃修改？'); }
+function updateDayTotal() {
+  if (!$('dayEntry')) return;
+  const hours = Number($('dHours').value), ot = Number($('dOT').value);
+  $('dTotal').textContent = Number.isFinite(hours + ot) && hours >= 0 && ot >= 0 ? `合计 ${f1(hours + ot)} 小时（上班 + 加班）` : '上班和加班分别填写';
+  $('dCompRow').classList.toggle('hide', !(ot > 0) && $('dComp').getAttribute('aria-checked') !== 'true');
+}
+function updateDayState() {
+  if (!$('dayEntry')) return;
+  const dirty = inlineDirty(), record = S.records[sel], tag = $('dayCard').querySelector('.tag');
+  tag.textContent = dirty ? '待保存' : record ? '已保存' : '待记录';
+  tag.classList.toggle('ot', dirty);
+  $('btnDaySave').textContent = record && dirty ? '保存修改' : '保存';
+}
+$('dayCard').oninput = () => { clearError('dayError'); updateDayTotal(); updateDayState(); };
+$('dayCard').onclick = e => {
+  if (e.target.closest('#dComp')) { const on = $('dComp').getAttribute('aria-checked') !== 'true'; $('dComp').setAttribute('aria-checked', String(on)); $('dComp').classList.toggle('on', on); updateDayTotal(); updateDayState(); }
+  if (e.target.closest('[data-action="edit"]')) openSheet(sel);
+};
+function workRecord(hoursId, otId, comp, note) {
+  const regular = fieldNumber(hoursId, '上班时数', 0, 24), ot = fieldNumber(otId, '加班时数', 0, 24, true);
+  if (regular + ot > 24) { $(otId).setAttribute('aria-invalid', 'true'); $(otId).focus(); throw new Error('上班与加班合计不能超过 24 小时'); }
+  return { type: 'work', hours: round(regular + ot), ot: round(ot), otMode: comp ? 'comp' : 'pay', note };
+}
+$('dayCard').onsubmit = e => {
+  e.preventDefault(); clearError('dayError');
+  try {
+    const r = workRecord('dHours', 'dOT', $('dComp').getAttribute('aria-checked') === 'true', S.records[sel]?.note || '');
+    if (updateData(next => { next.records[sel] = r; })) { renderCal(); toast('记录已保存'); }
+  } catch (error) { showError('dayError', error.message); }
+};
+/* 编辑面板：保持未保存内容、键盘焦点和显式错误提示。 */
+let fType = 'work', fComp = false, fDate = '', initialForm = '', previousFocus = null;
+const formSnapshot = () => JSON.stringify([fType, fComp, ...['fHours', 'fOT', 'fCompH', 'fNote'].map(id => $(id).value)]);
+function chip() { $('fType').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.v === fType); b.setAttribute('aria-pressed', String(b.dataset.v === fType)); }); }
+function updateCompSwitch() {
+  const ot = Math.max(0, Number($('fOT').value) || 0);
+  $('fComp').classList.toggle('on', fComp); $('fComp').setAttribute('aria-checked', String(fComp));
+  $('compSwitchRow').classList.toggle('hide', ot === 0 && !fComp);
+  $('workTotal').textContent = `合计 ${f1(Math.max(0, Number($('fHours').value) || 0) + ot)} 小时（上班 + 加班）`;
+}
+function onType() { chip(); $('boxWork').classList.toggle('hide', fType !== 'work'); $('boxComp').classList.toggle('hide', fType !== 'comp'); clearError('formError'); }
+$('fType').querySelectorAll('button').forEach(b => b.onclick = () => { fType = b.dataset.v; onType(); });
+$('fComp').onclick = () => { fComp = !fComp; updateCompSwitch(); };
+function updatePresets() { $('hourPresets').querySelectorAll('button').forEach(b => { const on = Number(b.dataset.hours) === Number($('fHours').value); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
+function updateWorkInputs() { clearError('formError'); updateCompSwitch(); updatePresets(); }
+$('fHours').oninput = updateWorkInputs; $('fOT').oninput = updateWorkInputs;
+function openSheet(ds) {
+  const draft = ds === sel && inlineDirty() ? { hours: $('dHours').value, ot: $('dOT').value, comp: $('dComp').getAttribute('aria-checked') === 'true' } : null;
+  fDate = ds; const r = S.records[ds], d = parseD(ds), s = S.settings;
+  previousFocus = document.activeElement;
+  $('shTitle').textContent = `${d.getMonth() + 1}月${d.getDate()}日 · 周${WD[d.getDay()]}`; $('shSub').textContent = `${d.getFullYear()} 年 / ${r ? '修改记录' : '新建记录'}`;
+  $('btnDel').classList.toggle('hide', !r); fType = r?.type || 'work'; fComp = r?.otMode === 'comp';
+  $('fHours').value = r?.type === 'work' ? f1(regularHours(r)) : s.daily; $('fOT').value = r?.type === 'work' ? f1(r.ot) : '0'; $('fCompH').value = r?.type === 'comp' ? f1(r.compHours) : s.daily; $('fNote').value = r?.note || '';
+  $('fMore').open = !!r?.note;
+  $('hourPresets').innerHTML = [...new Set([s.daily, 8, 10, 12])].map(h => `<button data-hours="${h}">${h === s.daily ? '标准 ' : ''}${f1(h)}h</button>`).join('');
+  $('compPresets').innerHTML = `<button data-hours="${s.daily / 2}">半天 · ${f1(s.daily / 2)}h</button><button data-hours="${s.daily}">一天 · ${f1(s.daily)}h</button>`;
+  const baseBal = compSummary().bal + (r?.type === 'comp' ? r.compHours : r?.otMode === 'comp' ? -r.ot : 0);
+  $('compHint').textContent = `不含本日记录的调休余额：${f1(baseBal)} 小时`;
+  onType(); updateCompSwitch(); updatePresets(); initialForm = formSnapshot(); clearTimeout(toastT); $('toast').classList.remove('show');
+  if (draft) { $('fHours').value = draft.hours; $('fOT').value = draft.ot; fComp = draft.comp; updateCompSwitch(); updatePresets(); }
+  $('sheet').inert = false; $('sheet').setAttribute('aria-hidden', 'false'); document.body.classList.add('open'); $('main').inert = true; $('nav').inert = true; $('btnClose').focus({ preventScroll: true });
+}
+for (const [id, field] of [['hourPresets', 'fHours'], ['compPresets', 'fCompH']]) $(id).onclick = e => { const b = e.target.closest('[data-hours]'); if (b) { $(field).value = b.dataset.hours; if (field === 'fHours') updateWorkInputs(); } };
+function closeSheet(force = false) {
+  if (!document.body.classList.contains('open')) return;
+  if (!force && formSnapshot() !== initialForm && !confirm('填写的内容还未保存，确定放弃修改？')) return;
+  document.body.classList.remove('open'); $('main').inert = false; $('nav').inert = false;
+  if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true }); else $('calToday').focus({ preventScroll: true });
+  $('sheet').inert = true; $('sheet').setAttribute('aria-hidden', 'true');
+}
+for (const id of ['mask', 'btnClose', 'btnCancel']) $(id).onclick = () => closeSheet();
+document.addEventListener('keydown', e => {
+  if (!document.body.classList.contains('open')) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeSheet(); }
+  if (e.key === 'Tab') { const items = [...$('sheet').querySelectorAll('button,input,summary')].filter(el => !el.disabled && el.checkVisibility()); const first = items[0], last = items.at(-1); if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } }
+});
+function protectDraftOnLeave(e) { if (inlineDirty() || settingsDirty() || (document.body.classList.contains('open') && formSnapshot() !== initialForm)) { e.preventDefault(); e.returnValue = ''; } }
+window.addEventListener('beforeunload', protectDraftOnLeave);
+function clearError(id) { if (!$(id)) return; $(id).textContent = ''; $(id).classList.add('hide'); const scope = id === 'formError' ? $('sheet') : id === 'dayError' ? $('dayCard') : $('v-set'); scope.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid')); }
+function fieldNumber(id, label, min, max, allowBlank = false) { try { return number(allowBlank && $(id).value === '' ? 0 : $(id).value, label, min, max); } catch (error) { const details = $(id).closest('details'); if (details) details.open = true; $(id).setAttribute('aria-invalid', 'true'); $(id).focus(); throw error; } }
+function showError(id, message) { $(id).textContent = message; $(id).classList.remove('hide'); }
+$('btnSave').onclick = () => {
+  clearError('formError');
+  try {
+    let r = { type: fType, note: $('fNote').value.trim() };
+    if (fType === 'work') r = workRecord('fHours', 'fOT', fComp, r.note);
+    else r.compHours = fieldNumber('fCompH', '调休时数', 0.01, 24);
+    if (updateData(next => { next.records[fDate] = r; })) { closeSheet(true); sel = fDate; refresh(); toast('记录已保存'); }
+  } catch (error) { showError('formError', error.message); }
+};
+$('btnDel').onclick = () => { if (confirm('删除这天的记录？') && updateData(next => { delete next.records[fDate]; })) { closeSheet(true); refresh(); toast('记录已删除'); } };
+function reportDates() { return Array.from({ length: new Date(ry, rm + 1, 0).getDate() }, (_, i) => `${ry}-${pad(rm + 1)}-${pad(i + 1)}`); }
+function reportValues(ds) { const r = S.records[ds], work = r?.type === 'work'; return [ds, `周${WD[parseD(ds).getDay()]}`, !r ? '未记录' : work ? '上班' : '调休', work ? regularHours(r) : '', work ? r.ot : '', work ? r.hours : '', work && r.otMode === 'comp' ? r.ot : '', r?.type === 'comp' ? r.compHours : '', r?.note || '']; }
+$('rRows').onclick = e => { if (e.target.closest('[data-go-record]')) { setMonth(ry, rm); show('cal'); return; } const b = e.target.closest('[data-edit]'); if (b) { sel = b.dataset.edit; cy = ry; cm = rm; openSheet(sel); } };
+$('rPagePrev').onclick = () => { reportPage--; renderRep(); document.querySelector('.full-report').scrollTop = 0; };
+$('rPageNext').onclick = () => { reportPage++; renderRep(); document.querySelector('.full-report').scrollTop = 0; };
+$('cPagePrev').onclick = () => { eventPage--; renderRep(); };
+$('cPageNext').onclick = () => { eventPage++; renderRep(); };
+$('rExport').onclick = () => {
+  const cell = v => '"' + String(v).replace(/^[=+@\-\t\r]/, "'$&").replaceAll('"', '""') + '"';
+  const st = monthStats(`${ry}-${pad(rm + 1)}`);
+  const rows = [['日期', '星期', '类型', '上班（小时）', '加班（小时）', '合计（小时）', '换调休（小时）', '使用调休（小时）', '备注'], ...reportDates().map(reportValues), ['合计', '', '', f1(st.hours - st.ot), f1(st.ot), f1(st.hours), f1(st.otComp), f1(st.compUse), '']];
+  download('\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n'), `加班月报-${ry}-${pad(rm + 1)}.csv`, 'text/csv;charset=utf-8');
+};
+function renderRep() {
+  const ym = `${ry}-${pad(rm + 1)}`, st = monthStats(ym), c = compSummary();
+  if (reportMonth !== ym) { reportPage = 0; reportMonth = ym; document.querySelector('.full-report').scrollTo(0, 0); }
+  const dates = reportDates().filter(ds => S.records[ds]).reverse();
+  const pages = Math.max(1, Math.ceil(dates.length / PAGE_SIZE)); reportPage = Math.max(0, Math.min(reportPage, pages - 1));
+  $('rTitle').textContent = `${ry}年${rm + 1}月`; $('rMonth').value = ym; $('rSummary').textContent = dates.length ? `${dates.length} 天` : '';
+  $('rDays').innerHTML = `${st.days}<small> 天</small>`; $('rHours').innerHTML = `${f1(st.hours)}<small> 小时</small>`; $('rAvg').textContent = `${st.days ? f1(st.hours / st.days) : 0} 小时`; $('rOT').innerHTML = `${f1(st.ot)}<small> 小时</small>`; $('rOTComp').textContent = `${f1(st.otComp)} 小时`; $('rCompDays').textContent = `${st.compDays} 天 · ${f1(st.compUse)} 小时`;
+  $('cBal').textContent = `${f1(c.bal)} h`; $('cBalDay').textContent = `折合 ${f1(c.bal / S.settings.daily)} 天`;
+  const pageDates = dates.slice(reportPage * PAGE_SIZE, (reportPage + 1) * PAGE_SIZE);
+  document.querySelector('.daily-table').classList.toggle('has-notes', pageDates.some(ds => (S.records[ds].note || '').trim()));
+  $('rRows').innerHTML = pageDates.map(ds => {
+    return `<tr>${reportValues(ds).map((value, index) => index === 0 ? `<td class="report-date"><button class="date-link" data-edit="${ds}" aria-label="修改 ${ds}">${ds}</button></td>` : `<td class="${index >= 3 && index <= 7 ? 'num' : index === 8 ? 'report-note' : ''}">${value === '' ? '—' : esc(typeof value === 'number' ? f1(value) : value)}</td>`).join('')}</tr>`;
+  }).join('') || '<tr><td colspan="9" class="empty">本月还没有记录<br><button class="link-btn" data-go-record>去记一笔</button></td></tr>';
+  $('rTotals').classList.toggle('hide', !dates.length); $('rTotals').innerHTML = `<tr><td>整月合计</td><td colspan="2"></td><td class="num">${f1(st.hours - st.ot)}</td><td class="num">${f1(st.ot)}</td><td class="num">${f1(st.hours)}</td><td class="num">${f1(st.otComp)}</td><td class="num">${f1(st.compUse)}</td><td></td></tr>`;
+  $('rPager').classList.toggle('hide', pages <= 1); $('rPageLabel').textContent = `${reportPage + 1} / ${pages}`; $('rPagePrev').disabled = reportPage === 0; $('rPageNext').disabled = reportPage >= pages - 1;
+  const eventPages = Math.max(1, Math.ceil(c.ev.length / PAGE_SIZE)); eventPage = Math.max(0, Math.min(eventPage, eventPages - 1));
+  $('cList').innerHTML = c.ev.slice(eventPage * PAGE_SIZE, (eventPage + 1) * PAGE_SIZE).map(e => `<tr class="it"><td class="event-note"><small>${e.d}</small>${esc(e.t)}</td><td class="num ${e.h > 0 ? 'c' : ''}">${e.h > 0 ? '+' : ''}${f1(e.h)} h</td><td>${e.id !== undefined ? `<button class="del-adj" data-id="${esc(e.id)}" aria-label="删除 ${e.d} 的调整">删</button>` : '—'}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">暂无调休明细</td></tr>';
+  $('cPager').classList.toggle('hide', eventPages <= 1); $('cPageLabel').textContent = `${eventPage + 1} / ${eventPages}`; $('cPagePrev').disabled = eventPage === 0; $('cPageNext').disabled = eventPage >= eventPages - 1;
+}
+$('btnAdj').onclick = () => {
+  const value = prompt('调整调休余额（小时，正数增加，负数扣减）', ''); if (value === null) return;
+  let h; try { h = number(value, '调整时数'); if (h === 0) throw new Error('调整时数不能为 0'); } catch (error) { toast(error.message); return; }
+  const note = prompt('调整说明（可不填）', ''); if (note === null) return;
+  const id = SyncCore.randomId();
+  if (updateData(next => next.adjust.push({ id, d: today(), h, note: note.trim() }))) { renderRep(); toast('余额已调整'); }
+};
+$('cList').onclick = e => { const b = e.target.closest('[data-id]'); if (b) delAdj(b.dataset.id); };
+function delAdj(id) { if (confirm('删除这条余额调整？') && updateData(next => { next.adjust = next.adjust.filter(a => a.id !== id); })) { renderRep(); toast('调整已删除'); } }
+function settingsDirty() { return view === 'set' && ($('sDaily').value !== String(S.settings.daily) || $('sComp0').value !== String(S.settings.comp0)); }
+function renderSet() { $('sDaily').value = S.settings.daily; $('sComp0').value = S.settings.comp0; $('rulesLabel').textContent = `${f1(S.settings.daily)} 小时 / 天`; $('backupCount').textContent = `${Object.keys(S.records).length} 天记录`; $('backupMeta').textContent = `本机共有 ${Object.keys(S.records).length} 天记录、${S.adjust.length} 条余额调整`; }
+for (const id of ['sDaily', 'sComp0']) $(id).addEventListener('input', () => { clearError('setError'); $('rulesLabel').textContent = settingsDirty() ? '待保存' : `${f1(S.settings.daily)} 小时 / 天`; });
+$('btnSaveSet').onclick = () => { clearError('setError'); try { const settings = { daily: fieldNumber('sDaily', '标准工时', 0.01, 24), comp0: fieldNumber('sComp0', '初始余额', -1000000, 1000000, true) }; if (updateData(next => { next.settings = settings; })) { toast('设置已保存'); renderSet(); } } catch (error) { showError('setError', error.message); } };
+function download(content, filename, type = 'application/json;charset=utf-8') { if (window.JiabanNative) { window.JiabanNative.download(content, filename, type).catch(() => toast('导出未完成，可重新选择保存或分享')); return; } const url = URL.createObjectURL(new Blob([content], { type })); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); }
+const exportName = prefix => `${prefix}-${today()}-${new Date().toTimeString().slice(0, 8).replaceAll(':', '')}.json`;
+$('btnExport').onclick = () => { if (loadFailed) { toast('请使用上方的「导出原始数据」'); return; } download(JSON.stringify(S, null, 2), exportName('加班记录备份')); };
+$('btnRawExport').onclick = () => { if (rawData !== null) download(rawData, exportName('加班记录原始数据')); };
+$('btnImport').onclick = () => $('fileImport').click();
+$('fileImport').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (f.size > 10 * 1024 * 1024) { toast('备份文件过大，请选择 10 MB 以内的 JSON 文件'); return; }
+  let next; try { next = normalizeData(JSON.parse((await f.text()).replace(/^\uFEFF/, ''))); } catch { toast('备份无效：请检查日期、时数和文件格式'); return; }
+  const count = Object.keys(next.records).length;
+  if (!confirm(`将导入 ${count} 天记录、${next.adjust.length} 条余额调整，并覆盖本机数据。${window.JiabanSync?.connected() ? '当前已连接同步，导入的修改也会同步到其他设备。' : ''}请确认已导出当前备份，继续？`)) return;
+  if (commit(next, true)) { eventPage = 0; reportPage = 0; refresh(); toast(`导入成功 · ${count} 天记录`); }
+};
+$('btnClear').onclick = () => { if (window.JiabanSync?.connected()) { toast('请先断开此设备的同步，再清空本机数据'); return; } if (confirm('将清空全部记录、余额调整和设置。请先导出备份。') && confirm('确定清空？此操作不可恢复。') && commit(emptyData(), true)) { eventPage = 0; reportPage = 0; refresh(); toast('全部数据已清空'); } };
+function refresh() { if (view === 'cal') renderCal(); else if (view === 'rep') renderRep(); else renderSet(); }
+function show(v) {
+  if (v === view) return;
+  if (!allowDayLeave()) return;
+  if (settingsDirty() && !confirm('工时设置还未保存，确定放弃修改？')) return;
+  if (v === 'rep' && view === 'cal') { ry = cy; rm = cm; }
+  view = v; document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `v-${v}`));
+  document.querySelectorAll('nav button').forEach(b => { b.classList.toggle('on', b.dataset.view === v); if (b.dataset.view === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); refresh(); window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
+window.JiabanApp = {
+  canRestart() { return !(inlineDirty() || settingsDirty() || (document.body.classList.contains('open') && formSnapshot() !== initialForm)) || confirm('还有未保存的填写内容。更新可能关闭当前页面，确定继续？'); },
+  reload() { if (this.canRestart()) { window.removeEventListener('beforeunload', protectDraftOnLeave); location.reload(); } },
+  back() { if (document.body.classList.contains('open')) { closeSheet(); return true; } if (view !== 'cal') { show('cal'); return true; } return !allowDayLeave(); }
+};
+window.addEventListener('storage', e => {
+  if (e.key !== LS && e.key !== null) return;
+  if (document.body.classList.contains('open') || inlineDirty() || settingsDirty()) { toast('其他页面的数据已变化，请保留填写内容并刷新后重试'); return; }
+  loadFailed = false; dataIssue = ''; S = load(); cachedStats = null; renderWarning(); refresh(); toast('已更新其他页面保存的数据');
+});
+function updateHeader() { const d = new Date(); $('todayLabel').textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 · 星期${WD[d.getDay()]}`; $('netStatus').textContent = navigator.onLine ? '本机保存' : '离线可用'; $('netStatus').classList.toggle('offline', !navigator.onLine); }
+window.addEventListener('online', updateHeader); window.addEventListener('offline', updateHeader);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { updateHeader(); if (view === 'cal' && !document.body.classList.contains('open') && !inlineDirty()) renderCal(); } });
+renderWarning(); updateHeader(); renderCal(); renderSet();
+if (!window.JiabanNative && location.protocol.startsWith('http') && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+<script src="sync-client.js"></script>
+<script src="app-update.js"></script>
+</body>
+</html>

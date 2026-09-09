@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "appId": "com.jiaban.records",
+  "version": "1.3.1",
+  "versionCode": 131,
+  "minSdk": 24,
+  "url": "https://jiaban-x2m.pages.dev/downloads/jiaban-1.3.1.apk",
+  "sha256": "34a664e1d676b6e5bc6dfaf8d0a838d77d81e4934347ffdaf8e9bbd32684b689",
+  "size": 3346800,
+  "notes": "多设备同步默认折叠，点击标题展开或收起。\n收起时显示同步状态，自动同步照常运行。\n设置页面更简洁，保留原有记录和同步连接。\n设置页底部显示当前版本，手机与网页保持一致。"
+}

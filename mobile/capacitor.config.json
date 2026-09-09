@@ -1,0 +1,16 @@
+{
+  "appId": "com.jiaban.records",
+  "appName": "加班记录",
+  "webDir": "www",
+  "backgroundColor": "#f5f6f8",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT"
+    }
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  }
+}

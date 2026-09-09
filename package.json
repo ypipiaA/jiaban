@@ -1,0 +1,13 @@
+{
+  "name": "jiaban",
+  "version": "1.1.0",
+  "private": true,
+  "description": "本机保存、支持离线的加班记录网页",
+  "scripts": {
+    "start": "node dev-server.cjs",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}
